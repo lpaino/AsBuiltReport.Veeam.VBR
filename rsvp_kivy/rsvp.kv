@@ -1,0 +1,212 @@
+#:import dp kivy.metrics.dp
+
+<MessageBar>:
+    size_hint_y: None
+    height: dp(32)
+    padding: dp(8), 0
+    canvas.before:
+        Color:
+            rgba: (0.84, 0.93, 1, 1) if self.level == 'info' else ((0.95, 0.96, 0.78, 1) if self.level == 'warning' else ((0.86, 0.96, 0.86, 1) if self.level == 'success' else (1, 0.88, 0.88, 1)))
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    Label:
+        text: root.message
+        halign: 'left'
+        valign: 'middle'
+        text_size: self.size
+
+<FileSelectPopup>:
+    title: 'Selecionar logo (PNG/JPG)'
+    size_hint: .85, .85
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: dp(6)
+        padding: dp(8)
+        FileChooserListView:
+            id: filechooser
+            filters: ['*.png', '*.jpg', '*.jpeg']
+            path: '.'
+        BoxLayout:
+            size_hint_y: None
+            height: dp(40)
+            Button:
+                text: 'Cancelar'
+                on_release: root.dismiss()
+            Button:
+                text: 'Selecionar'
+                on_release: root.choose(filechooser.selection)
+
+<CompanionPopup>:
+    title: 'Adicionar acompanhantes'
+    size_hint: .6, .3
+    auto_dismiss: False
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: dp(8)
+        padding: dp(10)
+        Label:
+            text: 'Quantos acompanhantes deseja adicionar?'
+        TextInput:
+            id: qty
+            hint_text: '0'
+            multiline: False
+            input_filter: 'int'
+        BoxLayout:
+            size_hint_y: None
+            height: dp(40)
+            Button:
+                text: 'Pular'
+                on_release: root.submit('0')
+            Button:
+                text: 'Confirmar'
+                on_release: root.submit(qty.text)
+
+ScreenManager:
+    Screen:
+        name: 'main'
+        BoxLayout:
+            orientation: 'vertical'
+            canvas.before:
+                Color:
+                    rgba: app.theme_color
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+            BoxLayout:
+                size_hint_y: None
+                height: dp(60)
+                padding: dp(8)
+                spacing: dp(8)
+                Label:
+                    text: 'RSVP - Cadastro'
+                    bold: True
+                Button:
+                    text: 'Confirmação'
+                    size_hint_x: None
+                    width: dp(120)
+                    on_release: app.root.current = 'confirmation'
+            MessageBar:
+                id: message_bar
+            BoxLayout:
+                padding: dp(10)
+                spacing: dp(10)
+                orientation: 'horizontal'
+                BoxLayout:
+                    orientation: 'vertical'
+                    size_hint_x: .55
+                    spacing: dp(8)
+                    Label:
+                        text: 'Configuração da Interface'
+                        bold: True
+                        size_hint_y: None
+                        height: dp(24)
+                    Spinner:
+                        text: 'Azul'
+                        values: list(app.theme_options.keys())
+                        size_hint_y: None
+                        height: dp(40)
+                        on_text: app.change_theme(self.text)
+                    Spinner:
+                        text: 'Clássico'
+                        values: ['Clássico', 'Compacto', 'Cartões']
+                        size_hint_y: None
+                        height: dp(40)
+                        on_text: app.change_layout(self.text)
+                    Button:
+                        text: 'Upload logo'
+                        size_hint_y: None
+                        height: dp(40)
+                        on_release: app.select_logo()
+                    AsyncImage:
+                        source: app.logo_path if app.logo_path else ''
+                        allow_stretch: True
+                        keep_ratio: True
+                BoxLayout:
+                    orientation: 'vertical'
+                    size_hint_x: .45
+                    spacing: dp(6)
+                    Label:
+                        text: 'Cadastro de Convidado'
+                        bold: True
+                        size_hint_y: None
+                        height: dp(24)
+                    TextInput:
+                        id: guest_name
+                        hint_text: 'Nome'
+                        multiline: False
+                        size_hint_y: None
+                        height: dp(40)
+                    TextInput:
+                        id: guest_phone
+                        hint_text: 'Telefone'
+                        multiline: False
+                        size_hint_y: None
+                        height: dp(40)
+                    TextInput:
+                        id: guest_email
+                        hint_text: 'Email'
+                        multiline: False
+                        size_hint_y: None
+                        height: dp(40)
+                    Button:
+                        text: 'Cadastrar'
+                        size_hint_y: None
+                        height: dp(40)
+                        on_release:
+                            app.add_guest(guest_name.text, guest_phone.text, guest_email.text)
+                            guest_name.text = ''
+                            guest_phone.text = ''
+                            guest_email.text = ''
+                    Label:
+                        text: f'Convidados cadastrados: {app.guest_count}'
+                    Label:
+                        text: f'Total convites: {app.total_invites} | Confirmações: {app.total_confirmed}'
+
+    Screen:
+        id: confirmation_screen
+        name: 'confirmation'
+        BoxLayout:
+            orientation: 'vertical'
+            padding: dp(10)
+            spacing: dp(8)
+            canvas.before:
+                Color:
+                    rgba: (0.98, 0.98, 0.98, 1)
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+            Label:
+                text: 'Confirmação de Presença'
+                bold: True
+                size_hint_y: None
+                height: dp(32)
+            TextInput:
+                id: search_name
+                hint_text: 'Digite o nome exato do convidado'
+                multiline: False
+                size_hint_y: None
+                height: dp(40)
+            Spinner:
+                id: suggestions
+                text: 'Sugestões (quando houver)'
+                values: []
+                size_hint_y: None
+                height: dp(40)
+            Button:
+                text: 'Confirmar presença'
+                size_hint_y: None
+                height: dp(40)
+                on_release: app.confirm_presence(search_name.text, suggestions.text if suggestions.text != 'Sugestões (quando houver)' else '')
+            Label:
+                text: f'Total convites: {app.total_invites} | Confirmações: {app.total_confirmed}'
+            Widget:
+            BoxLayout:
+                size_hint_y: None
+                height: dp(40)
+                Button:
+                    text: 'Exportar CSV'
+                    on_release: app.export_data()
+                Button:
+                    text: 'Voltar'
+                    on_release: app.root.current = 'main'
